@@ -1,411 +1,768 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, ShoppingBag, User, Search, ChevronRight, Star, ArrowRight, Menu, X } from 'lucide-react';
-import active from "../src/assets/active.png";
-import casual from "../src/assets/casual.png";
-import formal from "../src/assets/formal.png";
-import street from "../src/assets/street.png";
-import blazer from "../src/assets/blazer.png";
-import denim from "../src/assets/denim.png";
-import linen from "../src/assets/linen.png";
-import utility from "../src/assets/utility.png";
-import min from "../src/assets/min.png";
-import hero1 from "../src/assets/hero1.png";
-import hero2 from "../src/assets/hero2.png";
-import hero3 from "../src/assets/hero3.png";
-import hero4 from "../src/assets/hero4.png";
+import { Copy, Download, Code, FileText, Zap, CheckCircle, AlertCircle } from 'lucide-react';
 
-const categoryImages = {
-  Casual: casual,
-  Formal: formal,
-  Streetwear: street,
-  Activewear: active,
-};
+const QuickTypeClone = () => {
+  const [jsonInput, setJsonInput] = useState(`{
+  "name": "John Doe",
+  "age": 30,
+  "email": "john.doe@example.com",
+  "isActive": true,
+  "address": {
+    "street": "123 Main St",
+    "city": "New York",
+    "zipCode": "10001"
+  },
+  "hobbies": ["reading", "swimming", "coding"]
+}`);
+  
+  const [selectedLanguage, setSelectedLanguage] = useState('typescript');
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [className, setClassName] = useState('MyData');
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
 
-const App = () => {
-  const [darkMode, setDarkMode] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [slideInterval, setSlideInterval] = useState(null);
+  const languages = [
+    { id: 'typescript', name: 'TypeScript', ext: 'ts' },
+    { id: 'javascript', name: 'JavaScript', ext: 'js' },
+    { id: 'python', name: 'Python', ext: 'py' },
+    { id: 'java', name: 'Java', ext: 'java' },
+    { id: 'csharp', name: 'C#', ext: 'cs' },
+    { id: 'cpp', name: 'C++', ext: 'cpp' },
+    { id: 'go', name: 'Go', ext: 'go' },
+    { id: 'swift', name: 'Swift', ext: 'swift' },
+    { id: 'kotlin', name: 'Kotlin', ext: 'kt' },
+    { id: 'rust', name: 'Rust', ext: 'rs' },
+  ];
 
-  const heroImages = [hero1, hero2, hero3, hero4];
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+  const generateCode = () => {
+    try {
+      const parsedJson = JSON.parse(jsonInput);
+      setError('');
+      
+      switch (selectedLanguage) {
+        case 'typescript':
+          setGeneratedCode(generateTypeScript(parsedJson, className));
+          break;
+        case 'javascript':
+          setGeneratedCode(generateJavaScript(parsedJson, className));
+          break;
+        case 'python':
+          setGeneratedCode(generatePython(parsedJson, className));
+          break;
+        case 'java':
+          setGeneratedCode(generateJava(parsedJson, className));
+          break;
+        case 'csharp':
+          setGeneratedCode(generateCSharp(parsedJson, className));
+          break;
+        case 'cpp':
+          setGeneratedCode(generateCpp(parsedJson, className));
+          break;
+        case 'go':
+          setGeneratedCode(generateGo(parsedJson, className));
+          break;
+        case 'swift':
+          setGeneratedCode(generateSwift(parsedJson, className));
+          break;
+        case 'kotlin':
+          setGeneratedCode(generateKotlin(parsedJson, className));
+          break;
+        case 'rust':
+          setGeneratedCode(generateRust(parsedJson, className));
+          break;
+        default:
+          setGeneratedCode('Language not supported yet');
+      }
+    } catch (err) {
+      setError('Invalid JSON: ' + err.message);
+      setGeneratedCode('');
+    }
   };
 
-  const staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 },
-    },
+  const generateTypeScript = (obj, name) => {
+    const generateInterface = (obj, interfaceName) => {
+      let code = `export interface ${interfaceName} {\n`;
+      
+      Object.keys(obj).forEach(key => {
+        const value = obj[key];
+        let type;
+        
+        if (value === null) {
+          type = 'null';
+        } else if (Array.isArray(value)) {
+          if (value.length === 0) {
+            type = 'any[]';
+          } else if (typeof value[0] === 'object' && value[0] !== null) {
+            type = `${key.charAt(0).toUpperCase() + key.slice(1)}Item[]`;
+          } else {
+            type = `${typeof value[0]}[]`;
+          }
+        } else if (typeof value === 'object') {
+          type = key.charAt(0).toUpperCase() + key.slice(1);
+        } else {
+          type = typeof value;
+        }
+        
+        code += `  ${key}: ${type};\n`;
+      });
+      
+      code += '}\n\n';
+      return code;
+    };
+
+    let fullCode = generateInterface(obj, name);
+    
+    // Generate nested interfaces
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        const nestedName = key.charAt(0).toUpperCase() + key.slice(1);
+        fullCode += generateInterface(value, nestedName);
+      } else if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
+        const itemName = `${key.charAt(0).toUpperCase() + key.slice(1)}Item`;
+        fullCode += generateInterface(value[0], itemName);
+      }
+    });
+
+    // Add conversion functions
+    fullCode += `export const to${name} = (json: string): ${name} => {\n`;
+    fullCode += `  return JSON.parse(json);\n`;
+    fullCode += `};\n\n`;
+    fullCode += `export const ${name.toLowerCase()}ToJson = (value: ${name}): string => {\n`;
+    fullCode += `  return JSON.stringify(value);\n`;
+    fullCode += `};`;
+
+    return fullCode;
   };
 
-  // Start Auto Slide
-  const startAutoSlide = () => {
-    if (slideInterval) return; // Prevent multiple intervals
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % heroImages.length);
-    }, 2000); // Adjust speed
-    setSlideInterval(interval);
+  const generateJavaScript = (obj, name) => {
+    let code = `class ${name} {\n`;
+    code += `  constructor(data) {\n`;
+    
+    Object.keys(obj).forEach(key => {
+      code += `    this.${key} = data.${key};\n`;
+    });
+    
+    code += `  }\n\n`;
+    code += `  static fromJSON(json) {\n`;
+    code += `    return new ${name}(JSON.parse(json));\n`;
+    code += `  }\n\n`;
+    code += `  toJSON() {\n`;
+    code += `    return JSON.stringify(this);\n`;
+    code += `  }\n`;
+    code += `}\n\n`;
+    code += `module.exports = ${name};`;
+    
+    return code;
   };
 
-  // Stop Auto Slide on Hover
-  const stopAutoSlide = () => {
-    clearInterval(slideInterval);
-    setSlideInterval(null);
+  const generatePython = (obj, name) => {
+    let code = `from dataclasses import dataclass\nfrom typing import List, Optional, Any\nimport json\n\n`;
+    
+    const generateClass = (obj, className) => {
+      let classCode = `@dataclass\nclass ${className}:\n`;
+      
+      Object.keys(obj).forEach(key => {
+        const value = obj[key];
+        let type_hint;
+        
+        if (value === null) {
+          type_hint = 'Optional[Any]';
+        } else if (Array.isArray(value)) {
+          if (value.length === 0) {
+            type_hint = 'List[Any]';
+          } else if (typeof value[0] === 'string') {
+            type_hint = 'List[str]';
+          } else if (typeof value[0] === 'number') {
+            type_hint = 'List[float]';
+          } else if (typeof value[0] === 'boolean') {
+            type_hint = 'List[bool]';
+          } else {
+            type_hint = 'List[Any]';
+          }
+        } else if (typeof value === 'string') {
+          type_hint = 'str';
+        } else if (typeof value === 'number') {
+          type_hint = 'float';
+        } else if (typeof value === 'boolean') {
+          type_hint = 'bool';
+        } else if (typeof value === 'object') {
+          type_hint = key.charAt(0).toUpperCase() + key.slice(1);
+        } else {
+          type_hint = 'Any';
+        }
+        
+        classCode += `    ${key}: ${type_hint}\n`;
+      });
+      
+      classCode += `\n    @classmethod\n`;
+      classCode += `    def from_json(cls, json_str: str) -> '${className}':\n`;
+      classCode += `        data = json.loads(json_str)\n`;
+      classCode += `        return cls(**data)\n\n`;
+      classCode += `    def to_json(self) -> str:\n`;
+      classCode += `        return json.dumps(self.__dict__)\n\n`;
+      
+      return classCode;
+    };
+
+    code += generateClass(obj, name);
+    
+    // Generate nested classes
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        code += generateClass(value, key.charAt(0).toUpperCase() + key.slice(1));
+      }
+    });
+
+    return code;
+  };
+
+  const generateJava = (obj, name) => {
+    let code = `import com.fasterxml.jackson.annotation.JsonProperty;\nimport com.fasterxml.jackson.databind.ObjectMapper;\nimport java.util.List;\n\n`;
+    code += `public class ${name} {\n`;
+    
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+      let javaType;
+      
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          javaType = 'List<Object>';
+        } else if (typeof value[0] === 'string') {
+          javaType = 'List<String>';
+        } else if (typeof value[0] === 'number') {
+          javaType = 'List<Double>';
+        } else if (typeof value[0] === 'boolean') {
+          javaType = 'List<Boolean>';
+        } else {
+          javaType = 'List<Object>';
+        }
+      } else if (typeof value === 'string') {
+        javaType = 'String';
+      } else if (typeof value === 'number') {
+        javaType = 'double';
+      } else if (typeof value === 'boolean') {
+        javaType = 'boolean';
+      } else if (typeof value === 'object' && value !== null) {
+        javaType = key.charAt(0).toUpperCase() + key.slice(1);
+      } else {
+        javaType = 'Object';
+      }
+      
+      code += `    @JsonProperty("${key}")\n`;
+      code += `    private ${javaType} ${key};\n\n`;
+    });
+
+    // Getters and setters
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+      let javaType = typeof value === 'string' ? 'String' : 
+                    typeof value === 'number' ? 'double' :
+                    typeof value === 'boolean' ? 'boolean' : 'Object';
+      
+      if (Array.isArray(value)) {
+        javaType = 'List<Object>';
+      } else if (typeof value === 'object' && value !== null) {
+        javaType = key.charAt(0).toUpperCase() + key.slice(1);
+      }
+      
+      const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1);
+      code += `    public ${javaType} get${capitalizedKey}() {\n`;
+      code += `        return ${key};\n`;
+      code += `    }\n\n`;
+      code += `    public void set${capitalizedKey}(${javaType} ${key}) {\n`;
+      code += `        this.${key} = ${key};\n`;
+      code += `    }\n\n`;
+    });
+
+    code += `    public static ${name} fromJson(String json) throws Exception {\n`;
+    code += `        ObjectMapper mapper = new ObjectMapper();\n`;
+    code += `        return mapper.readValue(json, ${name}.class);\n`;
+    code += `    }\n\n`;
+    code += `    public String toJson() throws Exception {\n`;
+    code += `        ObjectMapper mapper = new ObjectMapper();\n`;
+    code += `        return mapper.writeValueAsString(this);\n`;
+    code += `    }\n`;
+    code += `}`;
+
+    return code;
+  };
+
+  const generateCSharp = (obj, name) => {
+    let code = `using System;\nusing System.Collections.Generic;\nusing Newtonsoft.Json;\n\n`;
+    code += `public class ${name}\n{\n`;
+    
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+      let csharpType;
+      
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          csharpType = 'List<object>';
+        } else if (typeof value[0] === 'string') {
+          csharpType = 'List<string>';
+        } else if (typeof value[0] === 'number') {
+          csharpType = 'List<double>';
+        } else if (typeof value[0] === 'boolean') {
+          csharpType = 'List<bool>';
+        } else {
+          csharpType = 'List<object>';
+        }
+      } else if (typeof value === 'string') {
+        csharpType = 'string';
+      } else if (typeof value === 'number') {
+        csharpType = 'double';
+      } else if (typeof value === 'boolean') {
+        csharpType = 'bool';
+      } else if (typeof value === 'object' && value !== null) {
+        csharpType = key.charAt(0).toUpperCase() + key.slice(1);
+      } else {
+        csharpType = 'object';
+      }
+      
+      const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1);
+      code += `    [JsonProperty("${key}")]\n`;
+      code += `    public ${csharpType} ${capitalizedKey} { get; set; }\n\n`;
+    });
+
+    code += `    public static ${name} FromJson(string json)\n`;
+    code += `    {\n`;
+    code += `        return JsonConvert.DeserializeObject<${name}>(json);\n`;
+    code += `    }\n\n`;
+    code += `    public string ToJson()\n`;
+    code += `    {\n`;
+    code += `        return JsonConvert.SerializeObject(this);\n`;
+    code += `    }\n`;
+    code += `}`;
+
+    return code;
+  };
+
+  const generateCpp = (obj, name) => {
+    let code = `#include <string>\n#include <vector>\n#include <nlohmann/json.hpp>\n\nusing json = nlohmann::json;\n\n`;
+    code += `class ${name} {\npublic:\n`;
+    
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+      let cppType;
+      
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          cppType = 'std::vector<json>';
+        } else if (typeof value[0] === 'string') {
+          cppType = 'std::vector<std::string>';
+        } else if (typeof value[0] === 'number') {
+          cppType = 'std::vector<double>';
+        } else if (typeof value[0] === 'boolean') {
+          cppType = 'std::vector<bool>';
+        } else {
+          cppType = 'std::vector<json>';
+        }
+      } else if (typeof value === 'string') {
+        cppType = 'std::string';
+      } else if (typeof value === 'number') {
+        cppType = 'double';
+      } else if (typeof value === 'boolean') {
+        cppType = 'bool';
+      } else {
+        cppType = 'json';
+      }
+      
+      code += `    ${cppType} ${key};\n`;
+    });
+
+    code += `\n    static ${name} from_json(const std::string& json_str) {\n`;
+    code += `        json j = json::parse(json_str);\n`;
+    code += `        ${name} obj;\n`;
+    
+    Object.keys(obj).forEach(key => {
+      code += `        obj.${key} = j["${key}"];\n`;
+    });
+    
+    code += `        return obj;\n`;
+    code += `    }\n\n`;
+    code += `    std::string to_json() const {\n`;
+    code += `        json j;\n`;
+    
+    Object.keys(obj).forEach(key => {
+      code += `        j["${key}"] = ${key};\n`;
+    });
+    
+    code += `        return j.dump();\n`;
+    code += `    }\n`;
+    code += `};`;
+
+    return code;
+  };
+
+  const generateGo = (obj, name) => {
+    let code = `package main\n\nimport (\n    "encoding/json"\n    "fmt"\n)\n\n`;
+    code += `type ${name} struct {\n`;
+    
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+      let goType;
+      
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          goType = '[]interface{}';
+        } else if (typeof value[0] === 'string') {
+          goType = '[]string';
+        } else if (typeof value[0] === 'number') {
+          goType = '[]float64';
+        } else if (typeof value[0] === 'boolean') {
+          goType = '[]bool';
+        } else {
+          goType = '[]interface{}';
+        }
+      } else if (typeof value === 'string') {
+        goType = 'string';
+      } else if (typeof value === 'number') {
+        goType = 'float64';
+      } else if (typeof value === 'boolean') {
+        goType = 'bool';
+      } else {
+        goType = 'interface{}';
+      }
+      
+      const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1);
+      code += `    ${capitalizedKey} ${goType} \`json:"${key}"\`\n`;
+    });
+
+    code += `}\n\n`;
+    code += `func (m *${name}) FromJSON(data []byte) error {\n`;
+    code += `    return json.Unmarshal(data, m)\n`;
+    code += `}\n\n`;
+    code += `func (m *${name}) ToJSON() ([]byte, error) {\n`;
+    code += `    return json.Marshal(m)\n`;
+    code += `}`;
+
+    return code;
+  };
+
+  const generateSwift = (obj, name) => {
+    let code = `import Foundation\n\nstruct ${name}: Codable {\n`;
+    
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+      let swiftType;
+      
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          swiftType = '[Any]';
+        } else if (typeof value[0] === 'string') {
+          swiftType = '[String]';
+        } else if (typeof value[0] === 'number') {
+          swiftType = '[Double]';
+        } else if (typeof value[0] === 'boolean') {
+          swiftType = '[Bool]';
+        } else {
+          swiftType = '[Any]';
+        }
+      } else if (typeof value === 'string') {
+        swiftType = 'String';
+      } else if (typeof value === 'number') {
+        swiftType = 'Double';
+      } else if (typeof value === 'boolean') {
+        swiftType = 'Bool';
+      } else {
+        swiftType = 'Any';
+      }
+      
+      code += `    let ${key}: ${swiftType}\n`;
+    });
+
+    code += `}\n\n`;
+    code += `extension ${name} {\n`;
+    code += `    static func from(json: Data) throws -> ${name} {\n`;
+    code += `        return try JSONDecoder().decode(${name}.self, from: json)\n`;
+    code += `    }\n\n`;
+    code += `    func toJSON() throws -> Data {\n`;
+    code += `        return try JSONEncoder().encode(self)\n`;
+    code += `    }\n`;
+    code += `}`;
+
+    return code;
+  };
+
+  const generateKotlin = (obj, name) => {
+    let code = `import kotlinx.serialization.Serializable\nimport kotlinx.serialization.json.Json\n\n`;
+    code += `@Serializable\ndata class ${name}(\n`;
+    
+    const keys = Object.keys(obj);
+    keys.forEach((key, index) => {
+      const value = obj[key];
+      let kotlinType;
+      
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          kotlinType = 'List<Any>';
+        } else if (typeof value[0] === 'string') {
+          kotlinType = 'List<String>';
+        } else if (typeof value[0] === 'number') {
+          kotlinType = 'List<Double>';
+        } else if (typeof value[0] === 'boolean') {
+          kotlinType = 'List<Boolean>';
+        } else {
+          kotlinType = 'List<Any>';
+        }
+      } else if (typeof value === 'string') {
+        kotlinType = 'String';
+      } else if (typeof value === 'number') {
+        kotlinType = 'Double';
+      } else if (typeof value === 'boolean') {
+        kotlinType = 'Boolean';
+      } else {
+        kotlinType = 'Any';
+      }
+      
+      code += `    val ${key}: ${kotlinType}${index < keys.length - 1 ? ',' : ''}\n`;
+    });
+
+    code += `) {\n`;
+    code += `    companion object {\n`;
+    code += `        fun fromJson(json: String): ${name} {\n`;
+    code += `            return Json.decodeFromString(json)\n`;
+    code += `        }\n`;
+    code += `    }\n\n`;
+    code += `    fun toJson(): String {\n`;
+    code += `        return Json.encodeToString(this)\n`;
+    code += `    }\n`;
+    code += `}`;
+
+    return code;
+  };
+
+  const generateRust = (obj, name) => {
+    let code = `use serde::{Deserialize, Serialize};\n\n`;
+    code += `#[derive(Serialize, Deserialize, Debug)]\npub struct ${name} {\n`;
+    
+    Object.keys(obj).forEach(key => {
+      const value = obj[key];
+      let rustType;
+      
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          rustType = 'Vec<serde_json::Value>';
+        } else if (typeof value[0] === 'string') {
+          rustType = 'Vec<String>';
+        } else if (typeof value[0] === 'number') {
+          rustType = 'Vec<f64>';
+        } else if (typeof value[0] === 'boolean') {
+          rustType = 'Vec<bool>';
+        } else {
+          rustType = 'Vec<serde_json::Value>';
+        }
+      } else if (typeof value === 'string') {
+        rustType = 'String';
+      } else if (typeof value === 'number') {
+        rustType = 'f64';
+      } else if (typeof value === 'boolean') {
+        rustType = 'bool';
+      } else {
+        rustType = 'serde_json::Value';
+      }
+      
+      code += `    pub ${key}: ${rustType},\n`;
+    });
+
+    code += `}\n\n`;
+    code += `impl ${name} {\n`;
+    code += `    pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {\n`;
+    code += `        serde_json::from_str(json)\n`;
+    code += `    }\n\n`;
+    code += `    pub fn to_json(&self) -> Result<String, serde_json::Error> {\n`;
+    code += `        serde_json::to_string(self)\n`;
+    code += `    }\n`;
+    code += `}`;
+
+    return code;
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(generatedCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
+  const downloadCode = () => {
+    const language = languages.find(lang => lang.id === selectedLanguage);
+    const blob = new Blob([generatedCode], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${className.toLowerCase()}.${language?.ext || 'txt'}`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   useEffect(() => {
-    startAutoSlide();
-    return () => clearInterval(slideInterval);
-  }, []);
-
-  const toggleDarkMode = () => setDarkMode(!darkMode);
-  const toggleMenu = () => setMenuOpen(!menuOpen);
+    generateCode();
+  }, [jsonInput, selectedLanguage, className]);
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
-      {/* Navigation */}
-      <nav className={`${darkMode ? 'bg-gray-800' : 'bg-white'} py-4 px-6 md:px-12 flex justify-between items-center sticky top-0 z-50 shadow-sm`}>
-        <div className="flex items-center space-x-12">
-          <motion.h2 className="text-2xl font-bold" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-            LUXETHREAD
-          </motion.h2>
-          <div className="hidden md:flex space-x-8">
-            <a href="#" className="hover:underline font-medium">New Arrivals</a>
-            <a href="#" className="hover:underline font-medium">Women</a>
-            <a href="#" className="hover:underline font-medium">Men</a>
-            <a href="#" className="hover:underline font-medium">Collections</a>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-4 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute top-1/2 -right-4 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000"></div>
+      </div>
+      
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl shadow-2xl transform hover:scale-110 transition-transform duration-300">
+              <Zap className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+              QuickType Clone
+            </h1>
           </div>
+          <p className="text-gray-300 text-lg max-w-2xl mx-auto leading-relaxed">
+            Generate strongly-typed models and serializers from JSON in multiple programming languages
+          </p>
         </div>
-        <div className="flex items-center space-x-6">
-          <button onClick={toggleDarkMode} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition duration-300">
-          {darkMode ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} className="text-gray-900" />}
 
-          </button>
-          <Search className="hidden md:block" size={20} />
-          <ShoppingBag className="hidden md:block" size={20} />
-          <User className="hidden md:block" size={20} />
-          <button onClick={toggleMenu} className="md:hidden">
-            {menuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
-      </nav>
-
-      {/* Hero Section with Background Image */}
-      <motion.section
-        className="relative h-screen flex items-center px-6 md:px-12 bg-cover bg-center"
-        style={{ backgroundImage: `url(${heroImages[currentIndex]})` }}
-      >
-        <div className="absolute inset-0 bg-black/40"></div> {/* Dark Overlay for Readability */}
-        <div className="relative z-10 w-2/3 pr-8 text-white">
-          <motion.h2
-            className="text-4xl md:text-6xl font-bold mb-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            Summer '25 Collection
-          </motion.h2>
-          <motion.p
-            className="text-lg mb-8 max-w-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            Elevate your wardrobe with our latest designs. Minimalist aesthetics meet contemporary fashion.
-          </motion.p>
-          <motion.button
-            className="bg-white text-gray-900 px-8 py-3 rounded-md font-medium flex items-center group"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Shop Now
-            <motion.span
-              className="inline-block ml-2"
-              initial={{ x: 0 }}
-              whileHover={{ x: 5 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ChevronRight size={18} />
-            </motion.span>
-          </motion.button>
-        </div>
-        {/* Carousel */}
-        <div className="absolute right-[20px] top-[-30px] h-full w-1/3 overflow-hidden z-10 flex items-center justify-center">
-          <div className="relative w-90 h-[70%] rounded-xl overflow-hidden shadow-lg" onMouseEnter={stopAutoSlide} onMouseLeave={startAutoSlide}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentIndex}
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '-100%' }}
-                transition={{ type: 'tween', duration: 0.3 }}
-                className="absolute w-full h-full"
-              >
-                <img src={heroImages[currentIndex]} alt={`Carousel image ${currentIndex + 1}`} className="w-full h-full object-cover" />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Categories Section */}
-      <section className={`py-16 px-6 md:px-12 ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={staggerContainer}
-          className="mb-12 text-center"
-        >
-          <motion.h3 variants={fadeInUp} className="text-3xl font-bold mb-4">Shop by Category</motion.h3>
-          <motion.p variants={fadeInUp} className="text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
-            Explore our diverse collection of high-quality apparel for every style and occasion.
-          </motion.p>
-        </motion.div>
-
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.1 }}
-          variants={staggerContainer}
-        >
-          {['Casual', 'Formal', 'Streetwear', 'Activewear'].map((category, index) => (
-            <motion.div
-              key={category}
-              className="relative h-80 group overflow-hidden rounded-lg"
-              variants={fadeInUp}
-              whileHover={{ y: -5 }}
-            >
-              <img 
-                src={categoryImages[category]} 
-                alt={category} 
-                className="w-full h-full object-cover transition duration-500 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-black/50 group-hover:bg-black/30 transition duration-300"></div>
-              <div className="absolute inset-0 flex flex-col justify-end p-6">
-                <h4 className="text-2xl font-bold text-white mb-2">{category}</h4>
-                <motion.button 
-                  className="bg-white text-gray-900 px-6 py-2 rounded w-full transition-all duration-300 
-                            flex justify-center items-center group-hover:opacity-100 opacity-0"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Explore
-                </motion.button>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
-
-      {/* Trending Collections */}
-      <section className={`py-16 px-6 md:px-12 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={staggerContainer}
-          className="flex justify-between items-center mb-12"
-        >
-          <motion.h3 variants={fadeInUp} className="text-3xl font-bold">New Arrivals</motion.h3>
-          <motion.a 
-            href="#"
-            variants={fadeInUp}
-            className="text-sm font-medium flex items-center group"
-          >
-            View All
-            <motion.span
-              className="ml-2"
-              initial={{ x: 0 }}
-              whileHover={{ x: 5 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ArrowRight size={16} />
-            </motion.span>
-          </motion.a>
-        </motion.div>
-
-        <div className="overflow-x-auto pb-4">
-          <motion.div 
-            className="flex space-x-6 min-w-max"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.1 }}
-            variants={staggerContainer}
-          >
-            {[
-              { name: "Minimalist Tee", price: "$49.99", image: min },
-              { name: "Relaxed Denim", price: "$89.99", image: denim },
-              { name: "Utility Jacket", price: "$129.99", image: utility },
-              { name: "Linen Shirt", price: "$59.99", image: linen },
-              { name: "Classic Blazer", price: "$149.99", image: blazer }
-            ].map((product, index) => (
-              <motion.div 
-                key={product.name}
-                className={`w-64 ${darkMode ? 'bg-gray-900' : 'bg-white'} rounded-lg overflow-hidden shadow-sm hover:shadow-md transition duration-300`}
-                variants={fadeInUp}
-                whileHover={{ y: -5 }}
-              >
-                <div className="h-72 overflow-hidden">
-                  <img 
-                    src={product.image} 
-                    alt={product.name} 
-                    className="w-full h-full object-cover transition duration-500 hover:scale-110"
-                  />
-                </div>
-                <div className="p-4">
-                  <h4 className="font-medium mb-1">{product.name}</h4>
-                  <p className="text-gray-500 dark:text-gray-400 mb-3">{product.price}</p>
-                  <motion.button 
-                    className={`w-full ${darkMode ? 'bg-white text-gray-900' : 'bg-gray-900 text-black'} py-2 rounded flex justify-center items-center`}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    Add to Bag
-                  </motion.button>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Customer Reviews */}
-      <motion.section 
-        className={`py-16 px-6 md:px-12 ${darkMode ? 'bg-gray-900' : 'bg-white'}`}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.2 }}
-        variants={staggerContainer}
-      >
-        <motion.h3 variants={fadeInUp} className="text-3xl font-bold mb-12 text-center">What Our Customers Say</motion.h3>
-        
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-8"
-          variants={staggerContainer}
-        >
-          {[
-            {name: "Sarah M.", review: "The quality of the fabrics exceeded my expectations. Definitely my go-to brand for essentials now.", rating: 5},
-            {name: "James L.", review: "Perfect fit and incredibly comfortable. The attention to detail in the design is remarkable.", rating: 5},
-            {name: "Emily R.", review: "Stylish, sustainable, and superb quality. I've received so many compliments on my new pieces!", rating: 4}
-          ].map((review) => (
-            <motion.div 
-              key={review.name}
-              className={`p-6 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'} shadow-sm`}
-              variants={fadeInUp}
-              whileHover={{ y: -5 }}
-            >
-              <div className="flex mb-3">
-                {Array(5).fill(0).map((_, i) => (
-                  <Star key={i} size={16} className={i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
-                ))}
-              </div>
-              <p className="mb-4 italic">{review.review}</p>
-              <p className="font-medium">{review.name}</p>
-            </motion.div>
-          ))}
-        </motion.div>
-      </motion.section>
-
-      {/* Newsletter */}
-      <motion.section 
-        className={`py-20 px-6 md:px-12 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.2 }}
-        variants={staggerContainer}
-      >
-        <div className="max-w-3xl mx-auto text-center">
-          <motion.h3 variants={fadeInUp} className="text-3xl font-bold mb-4">Join Our Community</motion.h3>
-          <motion.p variants={fadeInUp} className="mb-8 text-gray-500 dark:text-gray-400">
-            Subscribe to receive exclusive offers, early access to new collections, and 15% off your first order.
-          </motion.p>
-          
-          <motion.div 
-            variants={fadeInUp} 
-            className={`flex flex-col md:flex-row max-w-md mx-auto md:space-x-4 space-y-4 md:space-y-0 ${darkMode ? 'bg-gray-900' : 'bg-white'} p-2 rounded-lg shadow-sm`}
-          >
-            <input 
-              type="email" 
-              placeholder="Your email address" 
-              className={`flex-grow px-4 py-3 focus:outline-none rounded ${darkMode ? 'bg-gray-900' : 'bg-white'}`}
+        {/* Configuration */}
+        <div className="mb-8 flex flex-wrap gap-6 justify-center items-center">
+          <div className="flex items-center gap-3 bg-slate-800/50 backdrop-blur-md border border-slate-600/50 rounded-xl px-4 py-3 shadow-lg">
+            <label className="text-gray-300 font-medium">Class Name:</label>
+            <input
+              type="text"
+              value={className}
+              onChange={(e) => setClassName(e.target.value)}
+              className="px-3 py-2 bg-slate-700/50 border border-slate-500 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 backdrop-blur-sm"
+              placeholder="MyData"
             />
-            <motion.button 
-              className={`${darkMode ? 'bg-white text-gray-900' : 'bg-gray-900 text-white'} px-6 py-3 rounded font-medium`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+          </div>
+          <div className="flex items-center gap-3 bg-slate-800/50 backdrop-blur-md border border-slate-600/50 rounded-xl px-4 py-3 shadow-lg">
+            <label className="text-gray-300 font-medium">Language:</label>
+            <select
+              value={selectedLanguage}
+              onChange={(e) => setSelectedLanguage(e.target.value)}
+              className="px-3 py-2 bg-slate-700/50 border border-slate-500 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 backdrop-blur-sm"
             >
-              Subscribe
-            </motion.button>
-          </motion.div>
-        </div>
-      </motion.section>
-
-      {/* Footer */}
-      <footer className={`py-12 px-6 md:px-12 ${darkMode ? 'bg-gray-900 border-t border-gray-800' : 'bg-white border-t border-gray-100'}`}>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-          <div>
-            <h4 className="font-bold text-xl mb-4">LUXETHREAD</h4>
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
-              Contemporary fashion with a focus on quality materials and timeless design.
-            </p>
-            <div className="flex space-x-4">
-              {['facebook', 'twitter', 'instagram', 'pinterest'].map((social) => (
-                <a key={social} href="#" className="text-gray-400 hover:text-gray-900 dark:hover:text-black">
-                  <span className="sr-only">{social}</span>
-                  <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700"></div>
-                </a>
+              {languages.map(lang => (
+                <option key={lang.id} value={lang.id}>{lang.name}</option>
               ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* JSON Input */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-500/20 rounded-lg">
+                <FileText className="w-5 h-5 text-purple-400" />
+              </div>
+              <h2 className="text-xl font-semibold text-white">JSON Input</h2>
+              {error && (
+                <div className="flex items-center gap-1 bg-red-500/20 border border-red-500/30 rounded-lg px-3 py-1">
+                  <AlertCircle className="w-4 h-4 text-red-400" />
+                  <span className="text-red-400 text-sm">Invalid JSON</span>
+                </div>
+              )}
+            </div>
+            <div className="relative group">
+              <textarea
+                value={jsonInput}
+                onChange={(e) => setJsonInput(e.target.value)}
+                className="w-full h-96 p-4 bg-slate-800/60 backdrop-blur-md border border-slate-600/50 rounded-xl text-gray-100 font-mono text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all duration-300 group-hover:border-slate-500/70 shadow-xl"
+                placeholder="Enter your JSON here..."
+                spellCheck={false}
+              />
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/10 via-transparent to-pink-500/10 pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity duration-300"></div>
+            </div>
+            </div>
+
+          {/* Generated Code Output */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <Code className="w-5 h-5 text-blue-400" />
+                </div>
+                <h2 className="text-xl font-semibold text-white">Generated Code</h2>
+                {generatedCode && (
+                  <div className="flex items-center gap-1 bg-green-500/20 border border-green-500/30 rounded-lg px-3 py-1">
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                    <span className="text-green-400 text-sm">Ready</span>
+                  </div>
+                )}
+              </div>
+              
+              {generatedCode && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={copyToClipboard}
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-600/80 hover:bg-purple-600 border border-purple-500/50 rounded-lg text-white transition-all duration-200 backdrop-blur-sm shadow-lg hover:shadow-purple-500/25 hover:scale-105"
+                  >
+                    <Copy className="w-4 h-4" />
+                    {copied ? 'Copied!' : 'Copy'}
+                  </button>
+                  <button
+                    onClick={downloadCode}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600/80 hover:bg-blue-600 border border-blue-500/50 rounded-lg text-white transition-all duration-200 backdrop-blur-sm shadow-lg hover:shadow-blue-500/25 hover:scale-105"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            <div className="relative group">
+              <pre className="w-full h-96 p-4 bg-slate-800/60 backdrop-blur-md border border-slate-600/50 rounded-xl text-gray-100 font-mono text-sm overflow-auto shadow-xl group-hover:border-slate-500/70 transition-all duration-300">
+                <code className="language-typescript">
+                  {generatedCode || 'Generated code will appear here...'}
+                </code>
+              </pre>
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/10 via-transparent to-purple-500/10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
           </div>
-          
-          <div>
-            <h4 className="font-bold mb-4">Shop</h4>
-            <ul className="space-y-2 text-gray-500 dark:text-gray-400">
-              <li><a href="#" className="hover:underline">New Arrivals</a></li>
-              <li><a href="#" className="hover:underline">Best Sellers</a></li>
-              <li><a href="#" className="hover:underline">Sale Items</a></li>
-              <li><a href="#" className="hover:underline">Collections</a></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="font-bold mb-4">Help</h4>
-            <ul className="space-y-2 text-gray-500 dark:text-gray-400">
-              <li><a href="#" className="hover:underline">Contact Us</a></li>
-              <li><a href="#" className="hover:underline">Shipping Info</a></li>
-              <li><a href="#" className="hover:underline">Returns & Exchanges</a></li>
-              <li><a href="#" className="hover:underline">Size Guide</a></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="font-bold mb-4">About</h4>
-            <ul className="space-y-2 text-gray-500 dark:text-gray-400">
-              <li><a href="#" className="hover:underline">Our Story</a></li>
-              <li><a href="#" className="hover:underline">Sustainability</a></li>
-              <li><a href="#" className="hover:underline">Careers</a></li>
-              <li><a href="#" className="hover:underline">Press</a></li>
-            </ul>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-12 text-center">
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-slate-800/40 backdrop-blur-md border border-slate-600/30 rounded-full text-gray-400 shadow-lg">
+            <Zap className="w-4 h-4 text-purple-400" />
+            <span className="text-sm">Instantly generate type-safe code from JSON</span>
           </div>
         </div>
+      </div>
+
+      {/* Custom styles for animations */}
+      <style jsx>{`
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
         
-        <div className="pt-8 border-t border-gray-200 dark:border-gray-800 text-sm text-gray-500 dark:text-gray-400 flex flex-col md:flex-row justify-between items-center">
-          <p>© 2025 LUXETHREAD. All rights reserved.</p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#" className="hover:underline">Privacy Policy</a>
-            <a href="#" className="hover:underline">Terms of Service</a>
-            <a href="#" className="hover:underline">Cookie Policy</a>
-          </div>
-        </div>
-      </footer>
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 0.2;
+          }
+          50% {
+            opacity: 0.4;
+          }
+        }
+        
+        .animate-pulse {
+          animation: pulse 4s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };
 
-export default App;
+export default QuickTypeClone;
